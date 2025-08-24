@@ -1,3 +1,4 @@
+import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
@@ -276,9 +277,19 @@ const Showdown: React.FC = () => {
   const modalWidth = Math.min(windowWidth * 0.95, 900);
   const [activeSection, setActiveSection] = useState('TV shows');
   // const [people, setPeople] = useState([]);
+
+  const [sectionsCollapsed, setSectionsCollapsed] = useState(false);
+  React.useEffect(() => {
+    if (query.length > 0) {
+      setSectionsCollapsed(true);
+    } else {
+      setSectionsCollapsed(false);
+    }
+  }, [query]);
+
   return (
     <LinearGradient
-  colors={['#0a0a0f', '#1e1e28']}
+      colors={['#0a0a0f', '#1e1e28']}
       style={[styles.container, { minHeight: '100%' }]}
       start={{ x: 0.1, y: 0.1 }}
       end={{ x: 1, y: 1 }}
@@ -286,13 +297,30 @@ const Showdown: React.FC = () => {
       <NavBar activeSection={activeSection} onSectionChange={setActiveSection} />
       {activeSection === 'TV shows' && (
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: windowWidth > 700 ? 'row' : 'column', gap: 18, marginBottom: 18 }}>
-            <View style={{ flex: 1 }}>
-              <FavouritesSection favourites={favourites} setFavourites={setFavourites} styles={styles} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <RecentShowsSection shows={allShows} favourites={favourites} setFavourites={setFavourites} styles={styles} />
-            </View>
+          <View style={{ marginBottom: 18, marginHorizontal: 0 }}>
+            <TouchableOpacity onPress={() => setSectionsCollapsed(c => !c)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginLeft: 18 }}>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#F5F6FA' }}>Favourites & Most Recent Shows</Text>
+              <AntDesign name={sectionsCollapsed ? 'down' : 'up'} size={20} color="#F5F6FA" style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            {!sectionsCollapsed && (
+              <View style={{ flexDirection: windowWidth > 700 ? 'row' : 'column', gap: 18 }}>
+                <View style={{ flex: 1 }}>
+                  <FavouritesSection
+                    favourites={favourites}
+                    setFavourites={setFavourites}
+                    styles={styles}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <RecentShowsSection
+                    shows={allShows}
+                    favourites={favourites}
+                    setFavourites={setFavourites}
+                    styles={styles}
+                  />
+                </View>
+              </View>
+            )}
           </View>
           <View style={{ alignItems: 'center', marginTop: shows.length > 0 ? 32 : 0 }}>
             <View style={{ position: 'relative', marginBottom: shows.length > 0 ? 32 : 10, width: '100%', maxWidth: 500 }}>

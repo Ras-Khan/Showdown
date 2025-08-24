@@ -8,12 +8,14 @@ interface FavouritesSectionProps {
   favourites: Show[];
   setFavourites: (favs: Show[]) => void;
   styles: any;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 
 const SCROLL_AMOUNT = 200;
 
-const FavouritesSection: React.FC<FavouritesSectionProps> = ({ favourites, setFavourites, styles }) => {
+const FavouritesSection: React.FC<FavouritesSectionProps> = ({ favourites, setFavourites, styles, collapsed = false, onToggleCollapse }) => {
   const scrollRef = useRef<ScrollView>(null);
 
   const scrollLeft = () => {
@@ -30,52 +32,60 @@ const FavouritesSection: React.FC<FavouritesSectionProps> = ({ favourites, setFa
 
   return (
     <View style={{ marginBottom: 18, marginHorizontal: 18 }}>
-      <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: '#F5F6FA' }}>Favourites</Text>
-      {favourites.length === 0 ? (
-        <Text style={{ color: '#A0A2B2' }}>No favourites yet.</Text>
-      ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%' }}>
-          <TouchableOpacity onPress={scrollLeft} style={localStyles.arrowButton}>
-            <Text style={localStyles.arrowText}>{'◀'}</Text>
-          </TouchableOpacity>
-          <ScrollView
-            ref={scrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={true}
-            style={localStyles.scrollView}
-            contentContainerStyle={{ alignItems: 'flex-start' }}
-          >
-            {favourites.map(item => (
-              <View key={item.id} style={{ marginRight: 16, alignItems: 'center', width: 80 }}>
-                <View style={{ position: 'relative' }}>
-                  {item.image && (
-                    <Image source={{ uri: item.image }} style={{ width: 60, height: 90, borderRadius: 5 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#F5F6FA' }}>Favourites</Text>
+      </View>
+      {!collapsed && (
+        favourites.length === 0 ? (
+          <Text style={{ color: '#A0A2B2' }}>No favourites yet.</Text>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%' }}>
+            {favourites.length * 80 > 320 && (
+              <TouchableOpacity onPress={scrollLeft} style={localStyles.arrowButton}>
+                <Text style={localStyles.arrowText}>{'\u25c0'}</Text>
+              </TouchableOpacity>
+            )}
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={true}
+              style={localStyles.scrollView}
+              contentContainerStyle={{ alignItems: 'flex-start' }}
+            >
+              {favourites.map(item => (
+                <View key={item.id} style={{ marginRight: 16, alignItems: 'center', width: 80 }}>
+                  <View style={{ position: 'relative' }}>
+                    {item.image && (
+                      <Image source={{ uri: item.image }} style={{ width: 60, height: 90, borderRadius: 5 }} />
+                    )}
+                    <TouchableOpacity
+                      style={{ position: 'absolute', top: 6, right: 6 }}
+                      onPress={() => {
+                        setFavourites(favourites.filter(fav => fav.id !== item.id));
+                      }}
+                      accessibilityLabel="Remove from favourites"
+                    >
+                      <AntDesign name="star" size={22} color="#FFD700" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={{ fontSize: 14, marginTop: 4, maxWidth: 70, color: '#F5F6FA' }} numberOfLines={1}>{item.name}</Text>
+                  {item.nextEpisode ? (
+                    <Text style={{ fontSize: 12, color: '#FFD700', marginTop: 2, textAlign: 'center' }}>
+                      {getCountdown(item.nextEpisode.airdate)}
+                    </Text>
+                  ) : (
+                    <Text style={{ fontSize: 12, color: '#A0A2B2', marginTop: 2, textAlign: 'center' }}>No upcoming</Text>
                   )}
-                  <TouchableOpacity
-                    style={{ position: 'absolute', top: 6, right: 6 }}
-                    onPress={() => {
-                      setFavourites(favourites.filter(fav => fav.id !== item.id));
-                    }}
-                    accessibilityLabel="Remove from favourites"
-                  >
-                    <AntDesign name="star" size={22} color="#FFD700" />
-                  </TouchableOpacity>
                 </View>
-                <Text style={{ fontSize: 14, marginTop: 4, maxWidth: 70, color: '#F5F6FA' }} numberOfLines={1}>{item.name}</Text>
-                {item.nextEpisode ? (
-                  <Text style={{ fontSize: 12, color: '#FFD700', marginTop: 2, textAlign: 'center' }}>
-                    {getCountdown(item.nextEpisode.airdate)}
-                  </Text>
-                ) : (
-                  <Text style={{ fontSize: 12, color: '#A0A2B2', marginTop: 2, textAlign: 'center' }}>No upcoming</Text>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-          <TouchableOpacity onPress={scrollRight} style={localStyles.arrowButton}>
-            <Text style={localStyles.arrowText}>{'▶'}</Text>
-          </TouchableOpacity>
-        </View>
+              ))}
+            </ScrollView>
+            {favourites.length * 80 > 320 && (
+              <TouchableOpacity onPress={scrollRight} style={localStyles.arrowButton}>
+                <Text style={localStyles.arrowText}>{'\u25b6'}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )
       )}
     </View>
   );
