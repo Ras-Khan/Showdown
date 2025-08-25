@@ -1,8 +1,8 @@
-import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import FavouritesSection from './FavouritesSection';
 import NavBar from './NavBar';
-import { RecentShowsSection } from './RecentShowsSection';
+import PeopleList from './PeopleList';
 import ShowList from './ShowList';
 import ShowModal from './ShowModal';
+
 // import PeopleList from './PeopleList';
 
 interface Show {
@@ -49,12 +50,19 @@ interface CastMember {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#282A36',
+    backgroundColor: 'rgba(40, 50, 60, 0.32)',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 18,
     alignItems: 'center',
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(8px)' } : {}),
+    shadowColor: '#00FFB2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
   },
   buttonText: {
     color: '#F5F6FA',
@@ -102,14 +110,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#23252B',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#23252B',
     borderRadius: 10,
     marginBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   modalOverlay: {
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -162,18 +164,36 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   resultsBox: {
-    backgroundColor: '#23252B',
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 10,
     marginTop: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 2,
-    elevation: 1,
   },
 });
+
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .web-glass-searchbox {
+      background: rgba(44, 62, 80, 0.7); /* Match search button style */
+      border-radius: 8px;
+      box-shadow: 0 2px 8px 0 rgba(0,255,178,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 1.08rem;
+      outline: none;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      width: 100%; /* Keep width unchanged */
+      transition: box-shadow 0.2s;
+    }
+    .web-glass-searchbox:focus {
+      box-shadow: 0 0 0 2px #00FFB2;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 const Showdown: React.FC = () => {
   const [favourites, setFavourites] = useState<Show[]>([]);
@@ -287,142 +307,256 @@ const Showdown: React.FC = () => {
     }
   }, [query]);
 
+  const sectionTabs = ['TV shows', 'People', 'Movies'];
+
   return (
-    <LinearGradient
-      colors={['#0a0a0f', '#1e1e28']}
-      style={[styles.container, { minHeight: '100%' }]}
-      start={{ x: 0.1, y: 0.1 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <NavBar activeSection={activeSection} onSectionChange={setActiveSection} />
-      {activeSection === 'TV shows' && (
-        <View style={{ flex: 1 }}>
-          <View style={{ marginBottom: 18, marginHorizontal: 0 }}>
-            <TouchableOpacity onPress={() => setSectionsCollapsed(c => !c)} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginLeft: 18 }}>
-              <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#F5F6FA' }}>Favourites & Most Recent Shows</Text>
-              <AntDesign name={sectionsCollapsed ? 'down' : 'up'} size={20} color="#F5F6FA" style={{ marginLeft: 8 }} />
-            </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <LinearGradient
+        colors={[ 'rgba(0,255,128,0.25)', 'rgba(0,255,128,0.10)', 'rgba(0,0,0,0.0)' ]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 0.7 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '60%', zIndex: 0 }}
+      />
+      <View style={{ flex: 1 }}>
+        <NavBar activeSection={activeSection} onSectionChange={setActiveSection} />
+        {activeSection === 'TV shows' && (
+          <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'flex-start' }}>
             {!sectionsCollapsed && (
-              <View style={{ flexDirection: windowWidth > 700 ? 'row' : 'column', gap: 18 }}>
-                <View style={{ flex: 1 }}>
-                  <FavouritesSection
-                    favourites={favourites}
-                    setFavourites={setFavourites}
-                    styles={styles}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <RecentShowsSection
-                    shows={allShows}
-                    favourites={favourites}
-                    setFavourites={setFavourites}
-                    styles={styles}
-                  />
-                </View>
+              <View style={{ width: '100%', maxWidth: 600, marginBottom: 18, marginHorizontal: 'auto', alignItems: 'center' }}>
+                <FavouritesSection
+                  favourites={favourites}
+                  setFavourites={setFavourites}
+                  styles={styles}
+                  onShowPress={async (item) => {
+                    setSelectedShow(item);
+                    setModalVisible(true);
+                    setDetailsLoading(true);
+                    setEpisodesSectionCollapsed(true);
+                    setCastSectionCollapsed(true);
+                    // Fetch episodes
+                    try {
+                      const episodesRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/episodes`);
+                      const episodesData: any[] = await episodesRes.json();
+                      setEpisodes(episodesData);
+                      // Count seasons and episodes
+                      const seasons = Array.from(new Set(episodesData.map((ep: any) => ep.season)));
+                      setSeasonsCount(seasons.length);
+                      setSelectedShow((prev) => prev ? { ...prev, seasonsCount: seasons.length, episodesCount: episodesData.length } : prev);
+                      const collapsed: { [season: number]: boolean } = {};
+                      (seasons as number[]).forEach((seasonNum: number) => { collapsed[seasonNum] = true; });
+                      setCollapsedSeasons(collapsed);
+                    } catch {}
+                    // Fetch cast
+                    try {
+                      const castRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/cast`);
+                      const castData: any[] = await castRes.json();
+                      setCast(castData.map((c: any) => ({
+                        id: c.person.id,
+                        name: c.person.name,
+                        character: c.character.name,
+                        image: c.person.image?.medium,
+                      })));
+                    } catch {}
+                    setDetailsLoading(false);
+                  }}
+                />
               </View>
             )}
+            <View style={{ alignItems: 'center', marginTop: 0, marginBottom: 18 }}>
+              {Platform.OS === 'web' ? (
+                <div style={{
+                  background: 'rgba(44, 62, 80, 0.7)',
+                  borderRadius: 8,
+                  boxShadow: '0 2px 8px 0 rgba(0,255,178,0.08)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: '#fff',
+                  padding: '10px 18px',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  width: '520px',
+                  maxWidth: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  margin: '24px auto 24px auto', // Add top and bottom margin
+                }}>
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search for a TV show..."
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#fff',
+                      fontSize: '1.08rem',
+                      width: '100%',
+                      padding: 0,
+                    }}
+                  />
+                  {query.length > 0 && (
+                    <TouchableOpacity
+                      style={{ position: 'absolute', right: 10, top: 0, height: 40, justifyContent: 'center', alignItems: 'center' }}
+                      onPress={() => {
+                        setQuery('');
+                        setShows([]);
+                      }}
+                      accessibilityLabel="Clear search"
+                    >
+                      <Text style={{ fontSize: 20, color: '#888' }}>✕</Text>
+                    </TouchableOpacity>
+                  )}
+                </div>
+              ) : (
+                <TextInput
+                  style={[styles.input, { paddingRight: 40, height: 40 }]}
+                  placeholder="Search for a TV show..."
+                  value={query}
+                  onChangeText={setQuery}
+                  onSubmitEditing={handleSearch}
+                  returnKeyType="search"
+                />
+              )}
+              <TouchableOpacity style={styles.button} onPress={handleSearch}>
+                <Text style={styles.buttonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+            {shows.length > 0 && (
+              <View style={[styles.resultsBox, { flex: 1, backgroundColor: '#111218', marginTop: 24 }]}> 
+                <Text style={styles.resultsTitle}>Search Results</Text>
+                <ShowList
+                  shows={shows}
+                  favourites={favourites}
+                  setFavourites={setFavourites}
+                  onShowPress={async (item) => {
+                    setSelectedShow(item);
+                    setModalVisible(true);
+                    setDetailsLoading(true);
+                    setEpisodesSectionCollapsed(true);
+                    setCastSectionCollapsed(true);
+                    // Fetch episodes
+                    try {
+                      const episodesRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/episodes`);
+                      const episodesData = await episodesRes.json();
+                      setEpisodes(episodesData);
+                      // Count seasons and episodes
+                      const seasons = Array.from(new Set(episodesData.map((ep: any) => ep.season)));
+                      setSeasonsCount(seasons.length);
+                      setSelectedShow(prev => prev ? { ...prev, seasonsCount: seasons.length, episodesCount: episodesData.length } : prev);
+                      const collapsed: { [season: number]: boolean } = {};
+                      (seasons as number[]).forEach((seasonNum: number) => { collapsed[seasonNum] = true; });
+                      setCollapsedSeasons(collapsed);
+                    } catch {}
+                    // Fetch cast
+                    try {
+                      const castRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/cast`);
+                      const castData = await castRes.json();
+                      setCast(castData.map((c: any) => ({
+                        id: c.person.id,
+                        name: c.person.name,
+                        character: c.character.name,
+                        image: c.person.image?.medium,
+                      })));
+                    } catch {}
+                    setDetailsLoading(false);
+                  }}
+                  styles={styles}
+                />
+              </View>
+            )}
+            <ShowModal
+              visible={modalVisible}
+              onClose={() => setModalVisible(false)}
+              show={selectedShow}
+              favourites={favourites}
+              setFavourites={setFavourites}
+              episodes={episodes}
+              cast={cast}
+              seasonsCount={seasonsCount}
+              detailsLoading={detailsLoading}
+              summaryExpanded={summaryExpanded}
+              setSummaryExpanded={setSummaryExpanded}
+              episodesSectionCollapsed={episodesSectionCollapsed}
+              setEpisodesSectionCollapsed={setEpisodesSectionCollapsed}
+              castSectionCollapsed={castSectionCollapsed}
+              setCastSectionCollapsed={setCastSectionCollapsed}
+              collapsedSeasons={collapsedSeasons}
+              setCollapsedSeasons={setCollapsedSeasons}
+              modalWidth={modalWidth}
+              styles={styles}
+            />
           </View>
-          <View style={{ alignItems: 'center', marginTop: shows.length > 0 ? 32 : 0 }}>
-            <View style={{ position: 'relative', marginBottom: shows.length > 0 ? 32 : 10, width: '100%', maxWidth: 500 }}>
+        )}
+        {activeSection === 'People' && (
+          <View style={{ flex: 1, alignItems: 'center', marginTop: 0, marginBottom: 18 }}>
+            {Platform.OS === 'web' ? (
+              <div style={{
+                background: 'rgba(44, 62, 80, 0.7)',
+                borderRadius: 8,
+                boxShadow: '0 2px 8px 0 rgba(0,255,178,0.08)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: '#fff',
+                padding: '10px 18px',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                width: '520px',
+                maxWidth: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                margin: '24px auto 24px auto',
+              }}>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search for a person..."
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#fff',
+                    fontSize: '1.08rem',
+                    width: '100%',
+                    padding: 0,
+                  }}
+                />
+                {query.length > 0 && (
+                  <TouchableOpacity
+                    style={{ position: 'absolute', right: 10, top: 0, height: 40, justifyContent: 'center', alignItems: 'center' }}
+                    onPress={() => {
+                      setQuery('');
+                    }}
+                    accessibilityLabel="Clear search"
+                  >
+                    <Text style={{ fontSize: 20, color: '#888' }}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </div>
+            ) : (
               <TextInput
                 style={[styles.input, { paddingRight: 40, height: 40 }]}
-                placeholder="Search for a TV show..."
+                placeholder="Search for a person..."
                 value={query}
                 onChangeText={setQuery}
-                onSubmitEditing={handleSearch}
                 returnKeyType="search"
               />
-              {query.length > 0 && (
-                <TouchableOpacity
-                  style={{ position: 'absolute', right: 10, top: 0, height: 40, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => {
-                    setQuery('');
-                    setShows([]);
-                  }}
-                  accessibilityLabel="Clear search"
-                >
-                  <Text style={{ fontSize: 20, color: '#888' }}>✕</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity style={styles.button} onPress={handleSearch}>
+            )}
+            <TouchableOpacity style={styles.button} onPress={() => {}}>
               <Text style={styles.buttonText}>Search</Text>
             </TouchableOpacity>
-          </View>
-          {shows.length > 0 && (
-            <View style={[styles.resultsBox, { flex: 1, backgroundColor: '#111218', marginTop: 24 }]}> 
-              <Text style={styles.resultsTitle}>Search Results</Text>
-              <ShowList
-                shows={shows}
-                favourites={favourites}
-                setFavourites={setFavourites}
-                onShowPress={async (item) => {
-                  setSelectedShow(item);
-                  setModalVisible(true);
-                  setDetailsLoading(true);
-                  setEpisodesSectionCollapsed(true);
-                  setCastSectionCollapsed(true);
-                  // Fetch episodes
-                  try {
-                    const episodesRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/episodes`);
-                    const episodesData = await episodesRes.json();
-                    setEpisodes(episodesData);
-                    // Count seasons and episodes
-                    const seasons = Array.from(new Set(episodesData.map((ep: any) => ep.season)));
-                    setSeasonsCount(seasons.length);
-                    setSelectedShow(prev => prev ? { ...prev, seasonsCount: seasons.length, episodesCount: episodesData.length } : prev);
-                    const collapsed: { [season: number]: boolean } = {};
-                    (seasons as number[]).forEach((seasonNum: number) => { collapsed[seasonNum] = true; });
-                    setCollapsedSeasons(collapsed);
-                  } catch {}
-                  // Fetch cast
-                  try {
-                    const castRes = await fetch(`https://api.tvmaze.com/shows/${item.id}/cast`);
-                    const castData = await castRes.json();
-                    setCast(castData.map((c: any) => ({
-                      id: c.person.id,
-                      name: c.person.name,
-                      character: c.character.name,
-                      image: c.person.image?.medium,
-                    })));
-                  } catch {}
-                  setDetailsLoading(false);
-                }}
-                styles={styles}
-              />
+            <View style={{ width: '100%', maxWidth: 600, marginTop: 24 }}>
+              <PeopleList searchQuery={query} />
             </View>
-          )}
-          <ShowModal
-            visible={modalVisible}
-            onClose={() => setModalVisible(false)}
-            show={selectedShow}
-            favourites={favourites}
-            setFavourites={setFavourites}
-            episodes={episodes}
-            cast={cast}
-            seasonsCount={seasonsCount}
-            detailsLoading={detailsLoading}
-            summaryExpanded={summaryExpanded}
-            setSummaryExpanded={setSummaryExpanded}
-            episodesSectionCollapsed={episodesSectionCollapsed}
-            setEpisodesSectionCollapsed={setEpisodesSectionCollapsed}
-            castSectionCollapsed={castSectionCollapsed}
-            setCastSectionCollapsed={setCastSectionCollapsed}
-            collapsedSeasons={collapsedSeasons}
-            setCollapsedSeasons={setCollapsedSeasons}
-            modalWidth={modalWidth}
-            styles={styles}
-          />
-        </View>
-      )}
-      {activeSection === 'Movies' && (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#F5F6FA', fontSize: 28, fontWeight: 'bold', marginTop: 40 }}>Movies</Text>
-          <Text style={{ color: '#A0A2B2', fontSize: 18, marginTop: 12 }}>Coming soon...</Text>
-        </View>
-      )}
-  {/* People section removed for now */}
-    </LinearGradient>
+          </View>
+        )}
+        {activeSection === 'Movies' && (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: '#F5F6FA', fontSize: 28, fontWeight: 'bold', marginTop: 40 }}>Movies</Text>
+            <Text style={{ color: '#A0A2B2', fontSize: 18, marginTop: 12 }}>Coming soon...</Text>
+          </View>
+        )}
+      </View>
+    </View>
   );
 };
 

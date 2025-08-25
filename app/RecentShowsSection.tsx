@@ -38,7 +38,7 @@ export const RecentShowsSection: React.FC<RecentShowsSectionProps> = ({ shows, f
   };
 
   return (
-    <View style={[styles.section, { marginHorizontal: 18 }] }>
+  <View style={[styles.section, { marginHorizontal: 18, padding: 12, borderRadius: 6, minHeight: 120 }] }>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
         <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#F5F6FA' }}>Most Recent Shows</Text>
       </View>
@@ -46,12 +46,10 @@ export const RecentShowsSection: React.FC<RecentShowsSectionProps> = ({ shows, f
         sortedShows.length === 0 ? (
           <Text style={{ color: '#A0A2B2' }}>No recent shows.</Text>
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%' }}>
-            {sortedShows.length * 80 > 320 && (
-              <TouchableOpacity onPress={scrollLeft} style={localStyles.arrowButton}>
-                <Text style={localStyles.arrowText}>{'\u25c0'}</Text>
-              </TouchableOpacity>
-            )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', minHeight: 120 }}>
+            <TouchableOpacity onPress={scrollLeft} style={localStyles.arrowButton}>
+              <Text style={localStyles.arrowText}>{'\u25c0'}</Text>
+            </TouchableOpacity>
             <ScrollView
               ref={scrollRef}
               horizontal
@@ -86,11 +84,9 @@ export const RecentShowsSection: React.FC<RecentShowsSectionProps> = ({ shows, f
                 </View>
               ))}
             </ScrollView>
-            {sortedShows.length * 80 > 320 && (
-              <TouchableOpacity onPress={scrollRight} style={localStyles.arrowButton}>
-                <Text style={localStyles.arrowText}>{'\u25b6'}</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity onPress={scrollRight} style={localStyles.arrowButton}>
+              <Text style={localStyles.arrowText}>{'\u25b6'}</Text>
+            </TouchableOpacity>
           </View>
         )
       )}
@@ -100,8 +96,8 @@ export const RecentShowsSection: React.FC<RecentShowsSectionProps> = ({ shows, f
 
 const localStyles = StyleSheet.create({
   arrowButton: {
-    width: 32,
-    height: 80,
+    width: 40,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(40,40,40,0.7)',
@@ -112,6 +108,7 @@ const localStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+    ...(Platform.OS !== 'web' ? { marginVertical: 16 } : {}),
   },
   arrowText: {
     fontSize: 28,
@@ -120,9 +117,9 @@ const localStyles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    maxHeight: 160,
-    borderRadius: 12,
-    backgroundColor: 'rgba(30,30,30,0.7)',
+    minHeight: 100,
+    maxHeight: 180,
+    borderRadius: 4,
     marginHorizontal: 4,
     ...(Platform.OS === 'web' ? {
       scrollbarWidth: 'thin',

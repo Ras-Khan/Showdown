@@ -1,71 +1,69 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const TVMAZE_PEOPLE_SEARCH_URL = 'https://api.tvmaze.com/search/people?q=';
+const TMDB_API_KEY = 'YOUR_TMDB_API_KEY'; // Replace with your TMDb API key
+const TMDB_SEARCH_URL = 'https://api.themoviedb.org/3/search/movie';
+const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w185';
 
-type Person = {
-  person: {
-    id: number;
-    name: string;
-    birthday?: string;
-    gender?: string;
-    country?: { name: string };
-    image?: { medium: string; original: string };
-    url?: string;
-  };
+type Movie = {
+  id: number;
+  title: string;
+  release_date?: string;
+  vote_average?: number;
+  overview?: string;
+  poster_path?: string;
 };
 
-interface PeopleListProps {
+interface MovieListProps {
   searchQuery: string;
 }
 
-export default function PeopleList({ searchQuery }: PeopleListProps) {
-  const [people, setPeople] = useState<Person[]>([]);
+export default function MovieList({ searchQuery }: MovieListProps) {
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!searchQuery) {
-      setPeople([]);
+      setMovies([]);
       return;
     }
     setLoading(true);
     setError(null);
-    fetch(`${TVMAZE_PEOPLE_SEARCH_URL}${encodeURIComponent(searchQuery)}`)
+    fetch(`${TMDB_SEARCH_URL}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`)
       .then(res => res.json())
       .then(data => {
-        setPeople(data || []);
+        setMovies(data.results || []);
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to fetch people');
+        setError('Failed to fetch movies');
         setLoading(false);
       });
   }, [searchQuery]);
 
   if (loading) return <ActivityIndicator size="large" color="#00FFB2" style={{ marginTop: 32 }} />;
   if (error) return <Text style={{ color: 'red', marginTop: 32 }}>{error}</Text>;
-  if (!people.length) return <Text style={{ color: '#fff', marginTop: 32 }}>No people found.</Text>;
+  if (!movies.length) return <Text style={{ color: '#fff', marginTop: 32 }}>No movies found.</Text>;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>People Results</Text>
+      <Text style={styles.header}>Movie Results</Text>
       <FlatList
-        data={people}
-        keyExtractor={item => item.person.id.toString()}
-        renderItem={({ item }) => (
+        data={movies}
+        keyExtractor={(item: Movie) => item.id.toString()}
+        renderItem={({ item }: { item: Movie }) => (
           <TouchableOpacity style={styles.item}>
             <Image
-              source={{ uri: item.person.image?.medium || undefined }}
+              source={{ uri: item.poster_path ? `${TMDB_IMAGE_URL}${item.poster_path}` : undefined }}
               style={styles.thumbnail}
               resizeMode="cover"
             />
             <View style={styles.info}>
-              <Text style={styles.title}>{item.person.name}</Text>
-              <Text style={styles.details}>Birthday: {item.person.birthday || 'N.A.'}</Text>
-              <Text style={styles.details}>Gender: {item.person.gender || 'N.A.'}</Text>
-              <Text style={styles.details}>Country: {item.person.country?.name || 'N.A.'}</Text>
-              <Text style={styles.details}>Profile: <Text style={{ color: '#00FFB2' }}>{item.person.url}</Text></Text>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.details}>Release: {item.release_date || 'N.A.'}</Text>
+              <Text style={styles.details}>Rating: {item.vote_average || 'N.A.'}</Text>
+              <Text style={styles.overview} numberOfLines={3}>{item.overview || 'No description available.'}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -79,6 +77,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginHorizontal: 12,
     backgroundColor: 'rgba(0,0,0,0.3)',
+    // Glassmorphism for web
     ...(typeof document !== 'undefined' ? { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } : {}),
     borderRadius: 0,
     padding: 12,
@@ -118,5 +117,10 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 14,
     marginBottom: 2,
+  },
+  overview: {
+    color: '#aaa',
+    fontSize: 13,
+    marginTop: 6,
   },
 });

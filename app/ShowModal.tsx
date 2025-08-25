@@ -1,7 +1,30 @@
 import { AntDesign } from '@expo/vector-icons';
 import React from 'react';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import getCountdown, { formatDateDMY } from './getCountdown';
 import { CastMember, Episode, Show } from './types';
+const modalGlassStyles = StyleSheet.create({
+  modalContent: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Half opacity
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    alignItems: 'stretch',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    shadowColor: '#00FFB2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 8,
+    width: '95%',
+    maxWidth: 500,
+    minHeight: 320,
+    maxHeight: '90%',
+    // Glassmorphism for web
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(18px)' } : {}),
+  },
+});
 
 interface ShowModalProps {
   visible: boolean;
@@ -59,7 +82,7 @@ const ShowModal: React.FC<ShowModalProps> = ({
           <View style={styles.modalOverlay} />
         </TouchableWithoutFeedback>
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }} pointerEvents="box-none">
-          <View style={[styles.modalContent, { width: modalWidth }]} pointerEvents="box-none">
+          <View style={[modalGlassStyles.modalContent, { width: modalWidth }]} pointerEvents="box-none">
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
@@ -115,7 +138,7 @@ const ShowModal: React.FC<ShowModalProps> = ({
                     Next Episode: S{show.nextEpisode.season}E{show.nextEpisode.episode}
                   </Text>
                   <Text style={{ color: '#FFD700' }}>
-                    Countdown: {show.nextEpisode.airdate}
+                    Countdown: {getCountdown(show.nextEpisode.airdate)} ( {formatDateDMY(show.nextEpisode.airdate)} )
                   </Text>
                 </>
               ) : (
@@ -152,7 +175,7 @@ const ShowModal: React.FC<ShowModalProps> = ({
                                 {!isCollapsed && (
                                   episodes.filter(ep => ep.season === seasonNum).map(ep => (
                                     <Text key={ep.id} style={{ fontSize: 14, marginLeft: 18, color: '#F5F6FA' }}>
-                                      E{ep.number}: {ep.name} ({ep.airdate})
+                                      E{ep.number}: {ep.name} ( {formatDateDMY(ep.airdate)} )
                                     </Text>
                                   ))
                                 )}
